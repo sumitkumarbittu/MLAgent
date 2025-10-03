@@ -1,20 +1,26 @@
-# FastAPI server
-fastapi==0.111.1
+# Core FastAPI
+fastapi==0.102.0
 uvicorn[standard]==0.23.2
 
-# Data validation
-pydantic==1.10.12
+# Data handling
+numpy==1.26.5
+scipy==1.11.2
+pandas==2.1.1
 
-# ML model - wheels compatible with Python 3.10/3.11
-scikit-learn==1.2.2   # prebuilt wheels, avoids Cython compilation
-joblib==1.3.2
-numpy==1.25.2         
+# Machine learning
+scikit-learn==1.3.2  # prebuilt wheel, avoids Cython compilation
 
 # Sentence embeddings
-torch==2.2.0           # CPU-only
-transformers==4.43.0
 sentence-transformers==2.2.2
+transformers==4.41.0
+torch==2.2.0+cpu  # CPU-only for Render, prebuilt wheel
+torchvision==0.17.0+cpu
 
-# Build tools
-setuptools>=68.0.0
-wheel>=1.0.0
+# Misc utilities
+joblib==1.3.2
+pydantic==2.6.0
+typing-extensions==4.8.0
+
+# Optional: avoid compilation issues
+wheel==0.41.2
+setuptools==68.1.2
