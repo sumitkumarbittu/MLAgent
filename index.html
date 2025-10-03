@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            padding: 2rem 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        .sentiment-positive {
+            color: #198754;
+            font-weight: bold;
+        }
+        .sentiment-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .sentiment-neutral {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        .result-card {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        .error-message {
+            display: none;
+            margin-top: 1rem;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="mb-5 text-center">
+            <h1 class="display-4">Sentiment Analysis</h1>
+            <p class="lead">Analyze text sentiment using AI</p>
+        </header>
+
+        <div class="card shadow">
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-4" id="analysisTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" type="button" role="tab">Single Text</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">Batch Analysis</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="analysisTabsContent">
+                    <!-- Single Text Tab -->
+                    <div class="tab-pane fade show active" id="single" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="singleText" class="form-label">Enter your text:</label>
+                            <textarea class="form-control" id="singleText" rows="5" required></textarea>
+                        </div>
+                        <button id="analyzeSingleBtn" class="btn btn-primary">Analyze Sentiment</button>
+                        
+                        <div id="singleResult" class="card mt-4 result-card">
+                            <div class="card-body">
+                                <h3 class="card-title">Analysis Result</h3>
+                                <div class="mb-3">
+                                    <h5>Your Text:</h5>
+                                    <div class="card bg-light p-3">
+                                        <p id="resultText" class="mb-0"></p>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <h5>Sentiment:</h5>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <p class="h4 mb-0" id="sentimentResult"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="newAnalysisBtn" class="btn btn-outline-primary">Analyze Another Text</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Analysis Tab -->
+                    <div class="tab-pane fade" id="batch" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="batchTexts" class="form-label">Enter multiple texts (one per line):</label>
+                            <textarea class="form-control" id="batchTexts" rows="10" required></textarea>
+                            <div class="form-text">Enter each text on a new line</div>
+                        </div>
+                        <button id="analyzeBatchBtn" class="btn btn-primary">Analyze All</button>
+                        
+                        <div id="batchResult" class="mt-4 result-card">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h3 class="card-title mb-0">Batch Analysis Results</h3>
+                                        <span id="resultCount" class="badge bg-primary"></span>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Text</th>
+                                                    <th>Sentiment</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="resultsTableBody">
+                                                <!-- Results will be inserted here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                        <button id="newBatchBtn" class="btn btn-outline-primary me-md-2">Analyze More</button>
+                                        <button id="backToSingleBtn" class="btn btn-primary">Back to Single</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center my-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Analyzing text, please wait...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="alert alert-danger error-message mt-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="errorText"></span>
+        </div>
+
+        <footer class="mt-5 text-center text-muted">
+            <p>Sentiment Analysis Tool &copy; 2023</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const analyzeSingleBtn = document.getElementById('analyzeSingleBtn');
+            const analyzeBatchBtn = document.getElementById('analyzeBatchBtn');
+            const singleResult = document.getElementById('singleResult');
+            const batchResult = document.getElementById('batchResult');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            const newAnalysisBtn = document.getElementById('newAnalysisBtn');
+            const newBatchBtn = document.getElementById('newBatchBtn');
+            const backToSingleBtn = document.getElementById('backToSingleBtn');
+            const loading = document.getElementById('loading');
+
+            // Event Listeners
+            analyzeSingleBtn.addEventListener('click', analyzeSingleText);
+            analyzeBatchBtn.addEventListener('click', analyzeBatchTexts);
+            if (newAnalysisBtn) newAnalysisBtn.addEventListener('click', resetSingleForm);
+            if (newBatchBtn) newBatchBtn.addEventListener('click', resetBatchForm);
+            if (backToSingleBtn) {
+                backToSingleBtn.addEventListener('click', () => {
+                    const singleTab = new bootstrap.Tab(document.getElementById('single-tab'));
+                    singleTab.show();
+                    resetBatchForm();
+                });
+            }
+
+            // Functions
+            async function analyzeSingleText() {
+                const text = document.getElementById('singleText').value.trim();
+                if (!text) {
+                    showError('Please enter some text to analyze');
+                    return;
+                }
+
+                try {
+                    showLoading(true);
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ text: text })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Failed to analyze text');
+                    }
+
+                    const result = await response.json();
+                    displaySingleResult(result);
+                    showError(false);
+                } catch (error) {
+                    showError(error.message || 'An error occurred while analyzing the text');
+                    console.error('Error:', error);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function analyzeBatchTexts() {
+                const texts = document.getElementById('batchTexts').value
+                    .split('\n')
+                    .map(t => t.trim())
+                    .filter(t => t);
+
+                if (texts.length === 0) {
+                    showError('Please enter at least one text to analyze');
+                    return;
+                }
+
+                try {
+                    showLoading(true);
+                    const response = await fetch('/api/analyze_batch', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ texts: texts })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Failed to analyze texts');
+                    }
+
+                    const result = await response.json();
+                    displayBatchResults(result);
+                    showError(false);
+                } catch (error) {
+                    showError(error.message || 'An error occurred while analyzing the texts');
+                    console.error('Error:', error);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            function displaySingleResult(result) {
+                const resultText = document.getElementById('resultText');
+                const sentimentResult = document.getElementById('sentimentResult');
+                
+                resultText.textContent = result.text || 'No text provided';
+                
+                const sentiment = result.sentiment || 'unknown';
+                const sentimentClass = getSentimentClass(sentiment);
+                
+                sentimentResult.textContent = sentiment.charAt(0).toUpperCase() + sentiment.slice(1);
+                sentimentResult.className = `h4 mb-0 ${sentimentClass}`;
+                
+                singleResult.style.display = 'block';
+            }
+
+            function displayBatchResults(results) {
+                const resultsTableBody = document.getElementById('resultsTableBody');
+                const resultCount = document.getElementById('resultCount');
+                
+                // Clear previous results
+                resultsTableBody.innerHTML = '';
+                
+                // Update count
+                const count = results.predictions ? results.predictions.length : 0;
+                resultCount.textContent = `${count} ${count === 1 ? 'result' : 'results'}`;
+                
+                // Add results to table
+                if (results.predictions && results.predictions.length > 0) {
+                    results.predictions.forEach((item, index) => {
+                        const row = document.createElement('tr');
+                        const sentimentClass = getSentimentClass(item.sentiment);
+                        
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${item.text || 'No text'}</td>
+                            <td><span class="${sentimentClass}">${item.sentiment || 'unknown'}</span></td>
+                        `;
+                        resultsTableBody.appendChild(row);
+                    });
+                }
+                
+                batchResult.style.display = 'block';
+            }
+
+            function getSentimentClass(sentiment) {
+                if (!sentiment) return '';
+                
+                const lowerSentiment = sentiment.toLowerCase();
+                if (lowerSentiment.includes('positive')) return 'sentiment-positive';
+                if (lowerSentiment.includes('negative')) return 'sentiment-negative';
+                if (lowerSentiment.includes('neutral')) return 'sentiment-neutral';
+                return '';
+            }
+
+            function resetSingleForm() {
+                document.getElementById('singleText').value = '';
+                singleResult.style.display = 'none';
+            }
+
+            function resetBatchForm() {
+                document.getElementById('batchTexts').value = '';
+                batchResult.style.display = 'none';
+            }
+
+            function showError(message) {
+                if (!message) {
+                    errorMessage.style.display = 'none';
+                    return;
+                }
+                
+                errorText.textContent = message;
+                errorMessage.style.display = 'block';
+                
+                // Auto-hide error after 5 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+
+            function showLoading(show) {
+                loading.style.display = show ? 'block' : 'none';
+            }
+        });
+    </script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elements
+        const analyzeSingleBtn = document.getElementById('analyzeSingleBtn');
+        const analyzeBatchBtn = document.getElementById('analyzeBatchBtn');
+        const singleResult = document.getElementById('singleResult');
+        const batchResult = document.getElementById('batchResult');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const newAnalysisBtn = document.getElementById('newAnalysisBtn');
+        const newBatchBtn = document.getElementById('newBatchBtn');
+        const backToSingleBtn = document.getElementById('backToSingleBtn');
+        const loading = document.getElementById('loading');
+
+        // Event Listeners
+        analyzeSingleBtn.addEventListener('click', analyzeSingleText);
+        analyzeBatchBtn.addEventListener('click', analyzeBatchTexts);
+        if (newAnalysisBtn) newAnalysisBtn.addEventListener('click', resetSingleForm);
+        if (newBatchBtn) newBatchBtn.addEventListener('click', resetBatchForm);
+        if (backToSingleBtn) {
+            backToSingleBtn.addEventListener('click', () => {
+                const singleTab = new bootstrap.Tab(document.getElementById('single-tab'));
+                singleTab.show();
+                resetBatchForm();
+            });
+        }
+
+        // API Base URL (change if deployed on Render or another server)
+        const API_BASE = "http://127.0.0.1:8000"; 
+
+        // Functions
+        async function analyzeSingleText() {
+            const text = document.getElementById('singleText').value.trim();
+            if (!text) {
+                showError('Please enter some text to analyze');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                const response = await fetch(`${API_BASE}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to analyze text');
+                }
+
+                const result = await response.json();
+                // result should be like { "text": "...", "sentiment": "positive" }
+                displaySingleResult(result);
+                showError(false);
+            } catch (error) {
+                showError(error.message || 'An error occurred while analyzing the text');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function analyzeBatchTexts() {
+            const texts = document.getElementById('batchTexts').value
+                .split('\n')
+                .map(t => t.trim())
+                .filter(t => t);
+
+            if (texts.length === 0) {
+                showError('Please enter at least one text to analyze');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                const response = await fetch(`${API_BASE}/predict_batch`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ texts: texts })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to analyze texts');
+                }
+
+                const result = await response.json();
+                // result should be like { "predictions": [ { "text": "...", "sentiment": "negative" }, ... ] }
+                displayBatchResults(result);
+                showError(false);
+            } catch (error) {
+                showError(error.message || 'An error occurred while analyzing the texts');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displaySingleResult(result) {
+            const resultText = document.getElementById('resultText');
+            const sentimentResult = document.getElementById('sentimentResult');
+            
+            resultText.textContent = result.text || 'No text provided';
+            
+            const sentiment = result.sentiment || 'unknown';
+            const sentimentClass = getSentimentClass(sentiment);
+            
+            sentimentResult.textContent = sentiment.charAt(0).toUpperCase() + sentiment.slice(1);
+            sentimentResult.className = `h4 mb-0 ${sentimentClass}`;
+            
+            singleResult.style.display = 'block';
+        }
+
+        function displayBatchResults(results) {
+            const resultsTableBody = document.getElementById('resultsTableBody');
+            const resultCount = document.getElementById('resultCount');
+            
+            // Clear previous results
+            resultsTableBody.innerHTML = '';
+            
+            // Update count
+            const count = results.predictions ? results.predictions.length : 0;
+            resultCount.textContent = `${count} ${count === 1 ? 'result' : 'results'}`;
+            
+            // Add results to table
+            if (results.predictions && results.predictions.length > 0) {
+                results.predictions.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    const sentimentClass = getSentimentClass(item.sentiment);
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${item.text || 'No text'}</td>
+                        <td><span class="${sentimentClass}">${item.sentiment || 'unknown'}</span></td>
+                    `;
+                    resultsTableBody.appendChild(row);
+                });
+            }
+            
+            batchResult.style.display = 'block';
+        }
+
+        function getSentimentClass(sentiment) {
+            if (!sentiment) return '';
+            
+            const lowerSentiment = sentiment.toLowerCase();
+            if (lowerSentiment.includes('positive')) return 'sentiment-positive';
+            if (lowerSentiment.includes('negative')) return 'sentiment-negative';
+            if (lowerSentiment.includes('neutral')) return 'sentiment-neutral';
+            return '';
+        }
+
+        function resetSingleForm() {
+            document.getElementById('singleText').value = '';
+            singleResult.style.display = 'none';
+        }
+
+        function resetBatchForm() {
+            document.getElementById('batchTexts').value = '';
+            batchResult.style.display = 'none';
+        }
+
+        function showError(message) {
+            if (!message) {
+                errorMessage.style.display = 'none';
+                return;
+            }
+            
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            
+            // Auto-hide error after 5 seconds
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+    });
+</script>
+<style>
+    body {
+        padding: 2rem 0;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        font-family: "Segoe UI", Roboto, Arial, sans-serif;
+        color: #343a40;
+    }
+
+    .container {
+        max-width: 1000px;
+    }
+
+    header h1 {
+        font-weight: 700;
+        color: #0d6efd;
+    }
+
+    header p {
+        color: #6c757d;
+        font-size: 1.25rem;
+    }
+
+    .card {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-tabs .nav-link {
+        border-radius: 0.5rem 0.5rem 0 0;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: #0d6efd;
+        color: #fff !important;
+    }
+
+    textarea.form-control {
+        border-radius: 0.5rem;
+        padding: 1rem;
+        font-size: 1rem;
+        resize: vertical;
+    }
+
+    button.btn {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    button.btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .sentiment-positive {
+        color: #198754;
+        font-weight: bold;
+    }
+
+    .sentiment-negative {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .sentiment-neutral {
+        color: #6c757d;
+        font-weight: bold;
+    }
+
+    .result-card {
+        display: none;
+        margin-top: 1.5rem;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .error-message {
+        display: none;
+        margin-top: 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+    }
+
+    #loading {
+        display: none;
+        text-align: center;
+        margin: 1.5rem 0;
+    }
+
+    footer {
+        margin-top: 3rem;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    footer p {
+        margin: 0;
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+</body>
+</html>
