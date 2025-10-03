@@ -1,22 +1,22 @@
-# Core web framework
+# Web
 fastapi==0.118.0
 uvicorn[standard]==0.37.0
 
-# Data processing
-numpy==2.3.3
-scipy==1.16.2
-pandas==2.3.3
-scikit-learn==1.7.2
+# ML & Data
+numpy>=2.3.0
+scipy>=1.16.0
+pandas>=2.3.0
+scikit-learn>=1.7.0
 
-# Transformers / embeddings
-transformers==4.57.0
-sentence-transformers==5.1.1
-huggingface-hub==0.35.3
-hf-xet==1.1.10
+# NLP / Embeddings
+transformers>=4.57.0
+sentence-transformers>=5.1.1
+huggingface-hub>=0.35.0
+hf-xet>=1.1.10
 
-# Torch (ensure prebuilt wheel)
-torch==2.8.0+cu12 ; platform_system == "Linux"
+# PyTorch (CPU only for Python 3.14)
+torch==2.8.0
 
 # Utilities
-python-dotenv==1.1.1
-requests==2.31.0
+python-dotenv>=1.1.1
+requests>=2.31.0
