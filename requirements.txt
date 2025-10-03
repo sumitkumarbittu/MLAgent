@@ -1,26 +1,15 @@
-# Core FastAPI
 fastapi==0.102.0
 uvicorn[standard]==0.23.2
-
-# Data handling
-numpy==1.26.5
-scipy==1.11.2
+numpy==1.25.2
+scipy==1.10.1
 pandas==2.1.1
-
-# Machine learning
-scikit-learn==1.3.2  # prebuilt wheel, avoids Cython compilation
-
-# Sentence embeddings
+scikit-learn==1.3.2
 sentence-transformers==2.2.2
 transformers==4.41.0
-torch==2.2.0+cpu  # CPU-only for Render, prebuilt wheel
+torch==2.2.0+cpu
 torchvision==0.17.0+cpu
-
-# Misc utilities
 joblib==1.3.2
 pydantic==2.6.0
 typing-extensions==4.8.0
-
-# Optional: avoid compilation issues
 wheel==0.41.2
 setuptools==68.1.2
